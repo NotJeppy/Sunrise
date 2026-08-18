@@ -3,6 +3,9 @@
 #include <Windows.h>
 
 #include <array>
+#include <span>
+#include <vector>
+#include <algorithm>
 #include <charconv>
 #include <cstdio>
 #include <string_view>
@@ -29,6 +32,11 @@ SRWLOCK g_lock{SRWLOCK_INIT};
 Keybinds g_keybinds{};
 core::path::Buffer g_path{};
 bool g_pathResolved{};
+/** Root the map files sit in, kept separately because the keybind path names one file. */
+core::path::Buffer g_mapRoot{};
+bool g_mapRootResolved{};
+std::array<MapPoint, kMapCapacity> g_map{};
+std::size_t g_mapCount{};
 
 [[nodiscard]] bool valid(const Keybinds& keybinds) noexcept {
     for (const std::uint32_t key : keybinds.virtualKeys) {
@@ -150,6 +158,126 @@ void load() noexcept {
     return complete;
 }
 
+
+/**
+ * Builds the file path one destination's map is filed under.
+ * @param destination Destination name. Anything outside the safe set becomes an underscore, so a
+ * name the game supplies cannot reach outside the owned folder.
+ * @param output Receives the whole path.
+ * @return True when the root was resolved and the name fit.
+ */
+[[nodiscard]] bool map_path(std::string_view destination, core::path::Buffer& output) noexcept {
+    if (!g_mapRootResolved || destination.empty()) {
+        return false;
+    }
+    output = g_mapRoot;
+    std::array<wchar_t, 96> name{};
+    std::size_t length = 0;
+    const std::size_t limit = (std::min)(destination.size(), name.size() - 1);
+    for (std::size_t index = 0; index < limit; ++index) {
+        const char value = destination[index];
+        const bool safe = (value >= 'a' && value <= 'z') || (value >= 'A' && value <= 'Z')
+                          || (value >= '0' && value <= '9') || value == '_' || value == '-';
+        name[length++] = safe ? static_cast<wchar_t>(value) : L'_';
+    }
+    return core::path::append(output, L"\\spawn_map_")
+           && core::path::append(output, std::wstring_view(name.data(), length))
+           && core::path::append(output, L".txt");
+}
+
+/** Reads one map file into the held map. @return True when the file was read. */
+[[nodiscard]] bool read_map(const core::path::Buffer& path) noexcept {
+    const HANDLE file = CreateFileW(path.chars.data(),
+                                    GENERIC_READ,
+                                    FILE_SHARE_READ,
+                                    nullptr,
+                                    OPEN_EXISTING,
+                                    FILE_ATTRIBUTE_NORMAL,
+                                    nullptr);
+    if (file == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+    // One line is well under 64 bytes, so this bounds the file at the point capacity.
+    std::vector<char> document(kMapCapacity * 64 + 1, '\0');
+    DWORD read = 0;
+    const bool ok = ReadFile(file,
+                             document.data(),
+                             static_cast<DWORD>(document.size() - 1),
+                             &read,
+                             nullptr)
+                    != FALSE;
+    (void)CloseHandle(file);
+    if (!ok) {
+        return false;
+    }
+    document[read] = '\0';
+    g_mapCount = 0;
+    const char* cursor = document.data();
+    while (*cursor != '\0' && g_mapCount < g_map.size()) {
+        unsigned tag = 0;
+        float x = 0.0F;
+        float y = 0.0F;
+        float z = 0.0F;
+        int consumed = 0;
+        if (sscanf_s(cursor, "%x %f %f %f%n", &tag, &x, &y, &z, &consumed) == 4) {
+            MapPoint point{};
+            point.tag = static_cast<std::uint32_t>(tag);
+            point.position = {x, y, z};
+            g_map[g_mapCount++] = point;
+            cursor += consumed;
+        }
+        while (*cursor != '\0' && *cursor != '\n') {
+            ++cursor;
+        }
+        if (*cursor == '\n') {
+            ++cursor;
+        }
+    }
+    return true;
+}
+
+/** Writes the held map to one file. @return True when the whole file was written. */
+[[nodiscard]] bool write_map(const core::path::Buffer& path) noexcept {
+    std::vector<char> document{};
+    document.reserve(g_mapCount * 64 + 64);
+    std::array<char, 96> line{};
+    for (std::size_t index = 0; index < g_mapCount; ++index) {
+        const MapPoint& point = g_map[index];
+        const int written = std::snprintf(line.data(),
+                                          line.size(),
+                                          "%08X %.3f %.3f %.3f\n",
+                                          static_cast<unsigned>(point.tag),
+                                          point.position[0],
+                                          point.position[1],
+                                          point.position[2]);
+        if (written <= 0) {
+            return false;
+        }
+        document.insert(document.end(), line.data(), line.data() + written);
+    }
+    const HANDLE file = CreateFileW(path.chars.data(),
+                                    GENERIC_WRITE,
+                                    0,
+                                    nullptr,
+                                    CREATE_ALWAYS,
+                                    FILE_ATTRIBUTE_NORMAL,
+                                    nullptr);
+    if (file == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+    DWORD written = 0;
+    bool complete = document.empty()
+                    || (WriteFile(file,
+                                  document.data(),
+                                  static_cast<DWORD>(document.size()),
+                                  &written,
+                                  nullptr)
+                            != FALSE
+                        && written == static_cast<DWORD>(document.size()));
+    complete = CloseHandle(file) != FALSE && complete;
+    return complete;
+}
+
 } // namespace
 
 void initialize(void* module) noexcept {
@@ -157,6 +285,8 @@ void initialize(void* module) noexcept {
     g_keybinds = {};
     g_pathResolved = core::path::artifact_directory(module, g_path)
                      && core::path::append(g_path, kFileSuffix);
+    g_mapCount = 0;
+    g_mapRootResolved = core::path::artifact_directory(module, g_mapRoot);
     if (g_pathResolved) {
         load();
     } else {
@@ -170,6 +300,9 @@ void shutdown() noexcept {
     g_keybinds = {};
     g_path = {};
     g_pathResolved = false;
+    g_mapRoot = {};
+    g_mapRootResolved = false;
+    g_mapCount = 0;
     ReleaseSRWLockExclusive(&g_lock);
 }
 
@@ -192,6 +325,67 @@ bool publish(const Keybinds& keybinds) noexcept {
         report_fail("write");
     }
     return true;
+}
+
+bool load_map(std::string_view destination) noexcept {
+    core::path::Buffer path{};
+    AcquireSRWLockExclusive(&g_lock);
+    g_mapCount = 0;
+    const bool loaded = map_path(destination, path) && read_map(path);
+    ReleaseSRWLockExclusive(&g_lock);
+    return loaded;
+}
+
+bool save_map(std::string_view destination) noexcept {
+    core::path::Buffer path{};
+    AcquireSRWLockExclusive(&g_lock);
+    const bool saved = map_path(destination, path) && write_map(path);
+    ReleaseSRWLockExclusive(&g_lock);
+    if (!saved) {
+        report_fail("map_write");
+    }
+    return saved;
+}
+
+void clear_map() noexcept {
+    AcquireSRWLockExclusive(&g_lock);
+    g_mapCount = 0;
+    ReleaseSRWLockExclusive(&g_lock);
+}
+
+bool add_map_point(const MapPoint& point) noexcept {
+    AcquireSRWLockExclusive(&g_lock);
+    const bool room = g_mapCount < g_map.size();
+    if (room) {
+        g_map[g_mapCount++] = point;
+    }
+    ReleaseSRWLockExclusive(&g_lock);
+    return room;
+}
+
+bool remove_last_map_point() noexcept {
+    AcquireSRWLockExclusive(&g_lock);
+    const bool held = g_mapCount != 0;
+    if (held) {
+        --g_mapCount;
+    }
+    ReleaseSRWLockExclusive(&g_lock);
+    return held;
+}
+
+std::size_t map_size() noexcept {
+    AcquireSRWLockShared(&g_lock);
+    const std::size_t count = g_mapCount;
+    ReleaseSRWLockShared(&g_lock);
+    return count;
+}
+
+std::size_t copy_map(std::span<MapPoint> output) noexcept {
+    AcquireSRWLockShared(&g_lock);
+    const std::size_t count = (std::min)(output.size(), g_mapCount);
+    std::copy_n(g_map.begin(), count, output.begin());
+    ReleaseSRWLockShared(&g_lock);
+    return count;
 }
 
 } // namespace sunrise::client::spawn

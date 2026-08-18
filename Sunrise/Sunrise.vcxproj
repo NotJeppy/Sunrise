@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -221,7 +221,9 @@
     <ClCompile Include="src\client\ui\movement\movement_panel.cpp" />
     <ClCompile Include="src\client\movement\movement_settings_store.cpp" />
     <ClCompile Include="src\client\spawn\spawn_keybind_store.cpp" />
+    <ClCompile Include="src\client\spawn\population_settings_store.cpp" />
     <ClCompile Include="src\client\content\entity_names\entity_name_cache.cpp" />
+    <ClCompile Include="src\client\content\placements\placement_extract.cpp" />
     <ClCompile Include="src\client\content\entity_names\localized_aliases.cpp" />
     <ClCompile Include="src\client\ui\player\player_panel.cpp" />
     <ClCompile Include="src\client\player\player_position.cpp" />
@@ -796,7 +798,9 @@
     <ClInclude Include="src\client\runtime\runtime.h" />
     <ClInclude Include="src\client\movement\movement_settings_store.h" />
     <ClInclude Include="src\client\spawn\spawn_keybind_store.h" />
+    <ClInclude Include="src\client\spawn\population_settings_store.h" />
     <ClInclude Include="src\client\content\entity_names\entity_name_cache.h" />
+    <ClInclude Include="src\client\content\placements\placement_extract.h" />
     <ClInclude Include="src\client\content\entity_names\localized_aliases.h" />
     <ClInclude Include="src\client\ui\player\player_panel.h" />
     <ClInclude Include="src\client\player\player_position.h" />
