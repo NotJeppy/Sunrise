@@ -233,16 +233,6 @@ bool Parser::characters(state::AccountState& output) noexcept {
     }
 }
 
-/** Reads one selectable ability's socket entry. */
-bool Parser::ability_entry(std::uint8_t& output) noexcept {
-    std::uint64_t value = 0;
-    if (!unsigned_integer(value) || value > state::kMaximumMovementAbilityEntry) {
-        return false;
-    }
-    output = static_cast<std::uint8_t>(value);
-    return true;
-}
-
 /** Parses one authored character identity. */
 bool Parser::character(state::CharacterState& output) noexcept {
     output = {};
@@ -314,24 +304,16 @@ bool Parser::character(state::CharacterState& output) noexcept {
             if (!boolean(output.contentBypass)) {
                 return false;
             }
-        } else if (key == "movement_ability") {
-            if (!ability_entry(output.movementAbilityEntry)) {
-                return false;
-            }
-        } else if (key == "grenade_ability") {
-            if (!ability_entry(output.grenadeAbilityEntry)) {
-                return false;
-            }
-        } else if (key == "super_ability") {
-            if (!ability_entry(output.superAbilityEntry)) {
-                return false;
-            }
-        } else if (key == "melee_ability") {
-            if (!ability_entry(output.meleeAbilityEntry)) {
-                return false;
-            }
-        } else if (key == "class_ability") {
-            if (!ability_entry(output.classAbilityEntry)) {
+        } else if (key == "movement_ability" || key == "grenade_ability" || key == "super_ability"
+                   || key == "melee_ability" || key == "class_ability") {
+            // Deliberately ignored on load: the subclass screen's first paint each login reads
+            // whatever the game's own UI initializes itself to before any interaction, which is
+            // always the ability-entry struct defaults below, not whatever State last committed.
+            // Restoring a persisted non-default pick here would leave that first paint showing
+            // something different from what is actually equipped until the player made any
+            // change and forced a redraw. Resetting every login keeps the two in sync from the
+            // start; the value is still written back out (see the writer), just never read back.
+            if (!skip_value(0)) {
                 return false;
             }
         } else if (key == "equipment") {

@@ -293,7 +293,12 @@ finalize_equipment_transition(const AccountState& account,
            && left.level == right.level && left.quantity == right.quantity
            && left.flags == right.flags && left.sockets.policy == right.sockets.policy
            && left.sockets.plugCount == right.sockets.plugCount
-           && left.sockets.plugs == right.sockets.plugs;
+           && left.sockets.plugs == right.sockets.plugs
+           && left.movementAbilityEntry == right.movementAbilityEntry
+           && left.grenadeAbilityEntry == right.grenadeAbilityEntry
+           && left.superAbilityEntry == right.superAbilityEntry
+           && left.meleeAbilityEntry == right.meleeAbilityEntry
+           && left.classAbilityEntry == right.classAbilityEntry;
 }
 
 /** Records one checked native item-state transition. */
@@ -348,11 +353,6 @@ void report_item_state(std::string_view stage,
         || left.appearanceValue != right.appearanceValue
         || left.lastOrbitedDestination != right.lastOrbitedDestination
         || left.contentBypass != right.contentBypass
-        || left.movementAbilityEntry != right.movementAbilityEntry
-        || left.grenadeAbilityEntry != right.grenadeAbilityEntry
-        || left.superAbilityEntry != right.superAbilityEntry
-        || left.meleeAbilityEntry != right.meleeAbilityEntry
-        || left.classAbilityEntry != right.classAbilityEntry
         || left.nextInventorySerial != right.nextInventorySerial
         || left.inventory.count != right.inventory.count) {
         return false;

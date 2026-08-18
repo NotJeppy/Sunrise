@@ -132,6 +132,13 @@ namespace sunrise::server::bap::encrypted::queuez {
                                      bool updatesAccount,
                                      SocketPlug& socketPlug) noexcept;
 
+/** Stages one resident subclass item-instance upsert without changing the Family-4 manifest. */
+[[nodiscard]] bool stage_subclass_selection(const SessionState& before,
+                                            std::uint64_t accountSoid,
+                                            std::uint64_t characterSoid,
+                                            std::uint64_t subclassInstanceSoid,
+                                            SubclassSelection& selection) noexcept;
+
 /**
  * Stages one Family-4 increment that adds a new resident item and updates its character.
  *

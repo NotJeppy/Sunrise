@@ -150,6 +150,11 @@ find_resolved_position(const middleware::datagen::family4::loadout::ResolvedLoad
                                     std::uint16_t targetDefinitionIndex,
                                     std::uint32_t flags,
                                     PendingItemState& mutation) noexcept;
+[[nodiscard]] bool stage_subclass_selection(const AccountState& snapshot,
+                                            std::size_t characterIndex,
+                                            std::uint64_t subclassInstanceSoid,
+                                            std::uint8_t requestedEntry,
+                                            PendingSubclassSelection& mutation) noexcept;
 [[nodiscard]] bool next_item_instance_soid(const AccountState& account,
                                            std::uint64_t& output) noexcept;
 [[nodiscard]] bool next_profile_item_instance_soid(const AccountState& account,

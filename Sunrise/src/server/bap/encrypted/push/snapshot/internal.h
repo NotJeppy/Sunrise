@@ -136,6 +136,12 @@ inline constexpr std::size_t kSingleObjectCount = 1;
                                        const state::PendingSocketPlug& mutation,
                                        Prepared& prepared) noexcept;
 
+/** Builds the Family-4 subclass item-instance upsert for one prepared node selection. */
+[[nodiscard]] bool prepare_subclass_selection(Scratch& scratch,
+                                              const queuez::SubclassSelection& selection,
+                                              const state::PendingSubclassSelection& mutation,
+                                              Prepared& prepared) noexcept;
+
 /**
  * Builds one Family-4 increment containing the newly resident item object followed by the
  *

@@ -125,6 +125,17 @@ struct Session {
     bool accountMutationPublished{};
     /** True while another peer's account mutation still needs a full local refresh. */
     bool accountResyncArmed{};
+    /**
+     * Tick count after which the owed ability-icon refresh may go out.
+     * A subclass selection invalidates the published ability buckets; the rebuild that restores
+     * them runs asynchronously off the Client content-extraction pump, so the appearance and
+     * roster refresh sent inline with the selection response can still carry the stale or empty
+     * buckets. This second, delayed refresh re-derives both records from committed State once the
+     * rebuild has had time to land.
+     */
+    std::uint64_t abilityRefreshDueTick{};
+    /** True while one ability-icon refresh is still owed to this peer. */
+    bool abilityRefreshArmed{};
 };
 
 namespace plaintext {
