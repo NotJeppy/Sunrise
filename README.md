@@ -1,7 +1,8 @@
 # Sunrise
 
 ## Jeppy's Fork of Sunshine
-> This is specifically a fork for "my" version of sunshine. It might be ahead of sunshine ever so slightly because it has specific pull requests that have been either denied or are still open. Example: spawning enemies with a menu
+> This is specifically a fork for "my" version of sunrise. It might be ahead of sunrise ever so slightly because it has specific pull requests that have been either denied or are still open. Example: spawning enemies with a menu
+> I will try to keep this updated with the main branch + maybe some extras
 
 Destiny 2 Offline Exploration Mod
 
