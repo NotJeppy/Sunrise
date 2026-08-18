@@ -223,8 +223,9 @@ bool preview_socket_plug(const PendingSocketPlug& mutation, AccountState& after)
                            mutation.characterIndex,
                            mutation.targetInstanceSoid,
                            mutation.socketLane,
-                           mutation.plugDefinitionIndex,
-                           canonical)
+                           mutation.requestedPlugDefinitionIndex,
+                           canonical,
+                           mutation.plugDefinitionHash)
         || canonical.accountSoid != mutation.accountSoid
         || canonical.characterSoid != mutation.characterSoid
         || canonical.targetDefinitionHash != mutation.targetDefinitionHash
@@ -236,6 +237,7 @@ bool preview_socket_plug(const PendingSocketPlug& mutation, AccountState& after)
         || canonical.itemIndex != mutation.itemIndex
         || canonical.targetDefinitionIndex != mutation.targetDefinitionIndex
         || canonical.plugDefinitionIndex != mutation.plugDefinitionIndex
+        || canonical.requestedPlugDefinitionIndex != mutation.requestedPlugDefinitionIndex
         || canonical.materialRequirementSetIndex != mutation.materialRequirementSetIndex
         || canonical.socketLane != mutation.socketLane
         || canonical.targetBucketId != mutation.targetBucketId
@@ -327,8 +329,9 @@ bool commit_socket_plug(PendingSocketPlug& mutation) noexcept {
                            prepared.characterIndex,
                            prepared.targetInstanceSoid,
                            prepared.socketLane,
-                           prepared.plugDefinitionIndex,
-                           canonical)
+                           prepared.requestedPlugDefinitionIndex,
+                           canonical,
+                           prepared.plugDefinitionHash)
         || canonical.characterSoid != prepared.characterSoid
         || canonical.accountSoid != prepared.accountSoid
         || canonical.targetDefinitionHash != prepared.targetDefinitionHash
@@ -340,6 +343,7 @@ bool commit_socket_plug(PendingSocketPlug& mutation) noexcept {
         || canonical.itemIndex != prepared.itemIndex
         || canonical.targetDefinitionIndex != prepared.targetDefinitionIndex
         || canonical.plugDefinitionIndex != prepared.plugDefinitionIndex
+        || canonical.requestedPlugDefinitionIndex != prepared.requestedPlugDefinitionIndex
         || canonical.materialRequirementSetIndex != prepared.materialRequirementSetIndex
         || canonical.socketLane != prepared.socketLane
         || canonical.targetBucketId != prepared.targetBucketId

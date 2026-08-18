@@ -144,6 +144,7 @@
     <ClCompile Include="src\state\runtime\state_account_identity_runtime.cpp" />
     <ClCompile Include="src\state\runtime\state_account_profile_runtime.cpp" />
     <ClCompile Include="src\state\runtime\state_account_socket_runtime.cpp" />
+    <ClCompile Include="src\state\runtime\state_rolled_socket_plugs.cpp" />
     <ClCompile Include="src\state\runtime\state_account_item_action_runtime.cpp" />
     <ClCompile Include="src\core\ui\busy\ui_busy_overlay.cpp" />
     <ClCompile Include="src\core\ui\busy\ui_busy_state.cpp" />
@@ -884,6 +885,7 @@
     <ClInclude Include="src\state\unlocks\unlocks_runtime.h" />
     <ClInclude Include="src\state\runtime\runtime.h" />
     <ClInclude Include="src\state\runtime\state_account_transaction_helpers.h" />
+    <ClInclude Include="src\state\runtime\state_rolled_socket_plugs.h" />
     <ClInclude Include="src\state\runtime\state.h" />
     <ClInclude Include="src\state\runtime\storage\internal.h" />
     <ClInclude Include="src\state\activity\definition.h" />

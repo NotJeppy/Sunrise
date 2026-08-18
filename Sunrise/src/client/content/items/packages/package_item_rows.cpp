@@ -84,7 +84,11 @@ bool build_item_rows(const reader::Source& source,
                                                  item.definitionIndex,
                                                  item.bucketId,
                                                  item.insertionMaterialRequirementSetIndex,
-                                                 item.enabledMaterialRequirementSetIndex};
+                                                 item.enabledMaterialRequirementSetIndex,
+                                                 item.tier,
+                                                 item.plugCategoryHash,
+                                                 item.rollSetIndex,
+                                                 item.linkedPlugIndex};
         if (needSocketPlugs) {
             storage.specialPlugCategories[item.definitionIndex] =
                 special_plug_category(item.plugCategoryHash);

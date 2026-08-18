@@ -256,6 +256,33 @@ bool prepare_equipment_swap(std::uint64_t requestedInstanceSoid,
         return false;
     }
 
+    if (previousInstanceSoid != 0) {
+        // The serial on an unequipped row is also the Client's stable ordering token for that
+        // bucket.  Giving the displaced item a fresh, greatest serial makes the Client rebuild it
+        // in the first grid cell even though the character object places it in the selected row.
+        // Transfer the selected row's prior token along with the row instead: the newly equipped
+        // item still has a fresh generation, while the displaced item occupies the grid cell the
+        // player clicked.
+        authored_inventory::Item& displaced = after.inventory.values[inventoryIndex];
+        if (displaced.instanceSoid != previousInstanceSoid) {
+            return false;
+        }
+        displaced.mutationSerial = requestedPosition.mutationSerial;
+
+        AccountState checkedAccount = account;
+        checkedAccount.characters[characterIndex] = after;
+        family4_loadout::ResolvedLoadout checkedLoadout{};
+        ResolvedPosition displacedPosition{};
+        if (!account::valid(checkedAccount)
+            || !family4_loadout::resolve(checkedAccount, characterIndex, checkedLoadout)
+            || !find_resolved_position(checkedLoadout, previousInstanceSoid, displacedPosition)
+            || displacedPosition.equipped || displacedPosition.equipmentSlot != requestedNativeSlot
+            || displacedPosition.inventoryRow != requestedPosition.inventoryRow
+            || displacedPosition.mutationSerial != requestedPosition.mutationSerial) {
+            return false;
+        }
+    }
+
     mutation.beforeCharacter = before;
     mutation.afterCharacter = after;
     mutation.characterSoid = before.soid;

@@ -180,6 +180,18 @@ publish_socket_plug_rules(std::span<const items::socket_plugs::Rule> rules,
                                           std::uint16_t plugDefinitionIndex) noexcept;
 
 /**
+ * Walks every plug one exact ordinary socket lane accepts. Missing relations fail closed.
+ * @return True when the lane has a pool and the visitor saw every member.
+ */
+[[nodiscard]] bool visit_socket_plug_pool(std::uint16_t itemDefinitionIndex,
+                                          std::uint8_t lane,
+                                          items::socket_plugs::MemberVisitor visitor,
+                                          void* context) noexcept;
+
+/** @return True when one plug definition occurs in any installed ordinary-socket plug pool. */
+[[nodiscard]] bool is_socket_plug_pooled(std::uint16_t plugDefinitionIndex) noexcept;
+
+/**
  * Answers whether one profile definition needs an item-instance resident so the native socket
  * action route can materialize it. Only stackable installed socket plugs in the supported mod and
  * shader profile buckets qualify; currency/material/intrinsic rows do not.

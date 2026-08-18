@@ -41,6 +41,8 @@ struct Row {
     std::uint32_t definitionHash{};
     std::uint16_t definitionIndex{};
     std::uint8_t bucketId{};
+    /** Native rarity ladder: 1 common through 5 exotic; 0 outside the ladder. */
+    std::uint8_t tier{};
     std::int32_t maxStackSize{};
     bool instanced{};
     std::optional<std::int8_t> equipmentSlot{};
@@ -53,6 +55,13 @@ struct Row {
     std::uint16_t socketTypes[kSocketCapacity]{};
     /** Plug category used by a few native sockets to expand a seed into its whole safe family. */
     std::uint32_t plugCategoryHash{};
+    /**
+     * Ordinal of the server roll set that grants this plug in place of a socket's action plug;
+     * 0 when the plug is socketed directly, 0xFFFF for a plug the service granted by other means.
+     */
+    std::uint16_t rollSetIndex{};
+    /** Item index of the plug this one stands for, or kUnavailablePlug when it stands alone. */
+    std::uint16_t linkedPlugIndex{kUnavailablePlug};
     /** Native material sets used when this definition is inserted or enabled as a plug. */
     std::uint16_t insertionMaterialRequirementSetIndex{kUnavailableMaterialRequirementSetIndex};
     std::uint16_t enabledMaterialRequirementSetIndex{kUnavailableMaterialRequirementSetIndex};

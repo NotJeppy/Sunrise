@@ -163,7 +163,10 @@ struct PendingSocketPlug {
     /** Equipment semantic index or dense inventory index, selected by `targetEquipped`. */
     std::size_t itemIndex{};
     std::uint16_t targetDefinitionIndex{};
+    /** Plug that lands in the lane. Differs from the request only for a rolled socket. */
     std::uint16_t plugDefinitionIndex{};
+    /** Plug the Client asked for, which decides the pool check and the material charge. */
+    std::uint16_t requestedPlugDefinitionIndex{};
     std::uint16_t materialRequirementSetIndex{0xFFFFU};
     std::uint8_t socketLane{};
     std::uint8_t targetBucketId{};

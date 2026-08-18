@@ -11,14 +11,43 @@ namespace sunrise::state {
 
 /** One account can own at most the 3 playable character slots. */
 inline constexpr std::size_t kCharacterCapacity = 3;
-/** A server-authored dismantle policy stays small but leaves room for build variants. */
-inline constexpr std::size_t kDismantleRewardPolicyCapacity = 8;
+/** A server-authored dismantle policy: a few rows per rarity and gear class. */
+inline constexpr std::size_t kDismantleRewardPolicyCapacity = 32;
 
-/** One profile material credited when ordinary character gear is dismantled. */
+/** Gear classes a dismantle payout row can be limited to. */
+enum class DismantleGearClass : std::uint8_t {
+    weapon = 1U << 0U,
+    armor = 1U << 1U,
+};
+
+/** Whether a payout row wants the dismantled item masterworked. */
+enum class DismantleMasterworkFilter : std::uint8_t {
+    any = 0,
+    masterworked = 1,
+    notMasterworked = 2,
+};
+
+/**
+ * One profile material credited when ordinary character gear is dismantled. Every filter left at
+ * its "any" value matches every item; the payout is the sum of the matching rows.
+ */
 struct DismantleRewardPolicy {
     std::uint32_t definitionHash{};
     std::int32_t quantity{};
+    /** Bit (1 << tier) per native tier 1-5 the row pays for; 0 pays for every tier. */
+    std::uint8_t tierMask{};
+    /** DismantleGearClass bits the row pays for; 0 pays for both. */
+    std::uint8_t classMask{};
+    DismantleMasterworkFilter masterwork{DismantleMasterworkFilter::any};
 };
+
+/** @return True when both rows are the same row: same material under the same filters. */
+[[nodiscard]] constexpr bool
+same_dismantle_policy_key(const DismantleRewardPolicy& left,
+                          const DismantleRewardPolicy& right) noexcept {
+    return left.definitionHash == right.definitionHash && left.tierMask == right.tierMask
+           && left.classMask == right.classMask && left.masterwork == right.masterwork;
+}
 
 /** Stable character race values authored independently of package definition mappings. */
 enum class CharacterRace : std::uint8_t {

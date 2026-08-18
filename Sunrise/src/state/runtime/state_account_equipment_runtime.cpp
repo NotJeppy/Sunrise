@@ -161,7 +161,8 @@ namespace family4_loadout = middleware::datagen::family4::loadout;
  *
  * Every surviving instance must preserve its native bucket. A generation advances exactly when
  * its published native row or equipped marker changes, and a second resolution proves that the
- * stamped after-image retained the staged placement.
+ * stamped after-image retained the staged placement. Callers that need a moved item to keep an
+ * older grid cell (equip swaps) rewrite that item's serial afterwards and re-validate.
  */
 [[nodiscard]] bool
 finalize_equipment_transition(const AccountState& account,

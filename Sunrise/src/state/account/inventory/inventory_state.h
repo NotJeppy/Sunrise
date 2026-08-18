@@ -83,7 +83,12 @@ struct Item {
     std::uint32_t definitionHash{};
     std::int32_t level{};
     std::int32_t quantity{};
-    /** Rising per-character generation assigned whenever this item changes inventory rows. */
+    /**
+     * Rising per-character generation assigned whenever this item changes inventory rows. The
+     * Client also uses it as the stable ordering token inside a bucket's grid, so an item's cell
+     * follows its serial rather than its row index. Equip swaps therefore hand the displaced item
+     * the clicked item's prior serial so it takes the clicked cell.
+     */
     std::int32_t mutationSerial{};
     /** Native accumulated item-state bits such as the finisher favorite marker. */
     std::uint32_t flags{};

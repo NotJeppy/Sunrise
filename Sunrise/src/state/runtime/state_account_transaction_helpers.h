@@ -133,12 +133,17 @@ find_resolved_position(const middleware::datagen::family4::loadout::ResolvedLoad
     CharacterState& after,
     std::size_t& movedItemCount) noexcept;
 [[nodiscard]] bool same_character(const CharacterState& left, const CharacterState& right) noexcept;
+/**
+ * @param pinnedPlugHash For a rolled socket's apply or re-roll, the result plug an earlier
+ *        staging rolled, so a re-staging reproduces the same after-image; 0 rolls afresh.
+ */
 [[nodiscard]] bool stage_socket_plug(const AccountState& snapshot,
                                      std::size_t characterIndex,
                                      std::uint64_t targetInstanceSoid,
                                      std::uint8_t socketLane,
                                      std::uint16_t plugDefinitionIndex,
-                                     PendingSocketPlug& mutation) noexcept;
+                                     PendingSocketPlug& mutation,
+                                     std::uint32_t pinnedPlugHash = 0) noexcept;
 [[nodiscard]] bool stage_item_state(const AccountState& snapshot,
                                     std::size_t characterIndex,
                                     std::uint64_t targetInstanceSoid,

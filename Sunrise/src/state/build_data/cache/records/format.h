@@ -28,7 +28,7 @@ inline constexpr std::array<char, 8> kCacheMagic{'S', 'U', 'N', 'R', 'I', 'S', '
  * Current build-data cache format. An older cache is rebuilt rather than read, so a bump needs
  * no other edit. Bump it whenever a domain's stored shape changes.
  */
-inline constexpr std::uint32_t kCacheFormatVersion = 35;
+inline constexpr std::uint32_t kCacheFormatVersion = 36;
 /** Signed -1 on disk means there is no equipment slot. */
 inline constexpr std::int8_t kAbsentEquipmentSlot = -1;
 /** The standard 64-bit FNV-1a offset basis starts the payload checksum. */
@@ -106,12 +106,15 @@ struct ItemRecord {
     std::uint32_t definitionHash{};
     std::uint16_t definitionIndex{};
     std::uint8_t bucketId{items::kUnresolvedBucketId};
-    /** Must be zero, so the packed item row matches across compilers. */
-    std::uint8_t reserved{};
+    /** Native rarity ladder byte; 0 outside the ladder. */
+    std::uint8_t tier{};
     std::uint16_t insertionMaterialRequirementSetIndex{
         items::kUnavailableMaterialRequirementSetIndex};
     std::uint16_t enabledMaterialRequirementSetIndex{
         items::kUnavailableMaterialRequirementSetIndex};
+    std::uint32_t plugCategoryHash{};
+    std::uint16_t rollSetIndex{};
+    std::uint16_t linkedPlugIndex{items::kUnavailableLinkedPlugIndex};
 };
 
 /** Disk form of one material charged by a native Collections acquisition. */
@@ -449,7 +452,7 @@ static_assert(sizeof(NamedRecord)
               == content::kDefinitionNameCapacity + 2 * sizeof(std::uint16_t)
                      + 2 * sizeof(std::uint32_t));
 static_assert(sizeof(ItemRecord)
-              == sizeof(std::uint32_t) + 3 * sizeof(std::uint16_t) + 2 * sizeof(std::uint8_t));
+              == 2 * sizeof(std::uint32_t) + 5 * sizeof(std::uint16_t) + 2 * sizeof(std::uint8_t));
 static_assert(sizeof(MaterialRequirementRecord)
               == sizeof(std::uint32_t) + 2 * sizeof(std::uint16_t) + 2 * sizeof(std::uint8_t));
 static_assert(sizeof(CollectibleRecord)

@@ -65,6 +65,20 @@ bool is_socket_plug_allowed(std::uint16_t itemDefinitionIndex,
            && items::socket_plugs::allowed(itemDefinitionIndex, lane, plugDefinitionIndex);
 }
 
+/** Walks one lane's pool once the whole relation is in State. */
+bool visit_socket_plug_pool(std::uint16_t itemDefinitionIndex,
+                            std::uint8_t lane,
+                            items::socket_plugs::MemberVisitor visitor,
+                            void* context) noexcept {
+    return socket_plug_rules_ready()
+           && items::socket_plugs::visit_pool(itemDefinitionIndex, lane, visitor, context);
+}
+
+/** Answers pool membership anywhere in the installed relation. */
+bool is_socket_plug_pooled(std::uint16_t plugDefinitionIndex) noexcept {
+    return socket_plug_rules_ready() && items::socket_plugs::contains(plugDefinitionIndex);
+}
+
 /**
  * Answers whether applying one plug spends a stack the account has to hold.
  *

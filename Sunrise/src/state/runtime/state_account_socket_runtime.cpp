@@ -17,6 +17,7 @@
 #include "runtime.h"
 #include "state.h"
 #include "state_account_transaction_helpers.h"
+#include "state_rolled_socket_plugs.h"
 #include "storage/internal.h"
 
 namespace sunrise::state {
@@ -101,7 +102,8 @@ void report_socket_plug(std::string_view stage,
                                      std::uint64_t targetInstanceSoid,
                                      std::uint8_t socketLane,
                                      std::uint16_t plugDefinitionIndex,
-                                     PendingSocketPlug& mutation) noexcept {
+                                     PendingSocketPlug& mutation,
+                                     std::uint32_t pinnedPlugHash) noexcept {
     mutation = {};
     CharacterItemLocation location{};
     build_data::items::Definition targetDefinition{};
@@ -212,7 +214,78 @@ void report_socket_plug(std::string_view stage,
         && *authoredSockets.plugs[socketLane] == plugDefinition.definitionHash) {
         return fail("already_applied");
     }
-    authoredSockets.plugs[socketLane] = plugDefinition.definitionHash;
+
+    // A rolled socket's apply or re-roll plug is an action, not a plug: the service answered it
+    // by socketing a result plug from the socket's roll set. The requested plug still decides the
+    // pool check and the material charge above; only the plug that lands in the lane changes.
+    build_data::items::Definition grantedDefinition = plugDefinition;
+    if (classify_rolled_plug(plugDefinition, targetDefinition, socketLane)
+        == RolledPlugAction::roll) {
+        const std::uint32_t currentPlugHash = authoredSockets.plugs[socketLane].value_or(0);
+        const bool reroll = is_rolled_result(currentPlugHash);
+        // A re-staging must land on the plug the first staging rolled, so the pinned roll is
+        // taken as long as it is still one the fresh roll could have produced.
+        RolledPlug rolled{};
+        if (pinnedPlugHash != 0) {
+            if (pinnedPlugHash == currentPlugHash
+                || !pin_rolled_plug(pinnedPlugHash, detail, rolled)) {
+                return fail("rolled_plug_pin");
+            }
+        } else {
+            const std::uint64_t seed = targetInstanceSoid
+                                       ^ (static_cast<std::uint64_t>(GetTickCount64()) << 8U)
+                                       ^ static_cast<std::uint64_t>(before.nextInventorySerial);
+            if (!roll_socket_plug(plugDefinition,
+                                  detail,
+                                  static_cast<std::uint8_t>(before.characterClass),
+                                  currentPlugHash,
+                                  seed,
+                                  rolled)) {
+                return fail("rolled_plug_roll");
+            }
+        }
+        if (!build_data::find_item_definition_hash(rolled.plugHash, grantedDefinition)
+            || grantedDefinition.definitionHash != rolled.plugHash) {
+            return fail("rolled_plug_roll");
+        }
+        // A result that stands for another plug re-rolls that plug's lane as well: the service
+        // swapped the piece's stat perk to the one the result names, which is what moves the
+        // stats.
+        if (rolled.linkedPerkHash != 0) {
+            build_data::items::Definition linkedDefinition{};
+            if (rolled.linkedLane == socketLane || rolled.linkedLane >= detail.ordinarySocketCount
+                || !build_data::find_item_definition_hash(rolled.linkedPerkHash, linkedDefinition)
+                || linkedDefinition.definitionHash != rolled.linkedPerkHash) {
+                return fail("rolled_plug_link");
+            }
+            authoredSockets.plugs[rolled.linkedLane] = rolled.linkedPerkHash;
+            report_socket_plug("rolled_plug_link",
+                               "ok",
+                               reroll ? "reroll" : "apply",
+                               before.soid,
+                               targetInstanceSoid,
+                               targetDefinition.definitionIndex,
+                               rolled.linkedLane,
+                               linkedDefinition.definitionIndex,
+                               targetDefinition.bucketId,
+                               linkedDefinition.bucketId,
+                               location.equipped,
+                               location.index);
+        }
+        report_socket_plug("rolled_plug",
+                           "ok",
+                           reroll ? "reroll" : "apply",
+                           before.soid,
+                           targetInstanceSoid,
+                           targetDefinition.definitionIndex,
+                           socketLane,
+                           grantedDefinition.definitionIndex,
+                           targetDefinition.bucketId,
+                           grantedDefinition.bucketId,
+                           location.equipped,
+                           location.index);
+    }
+    authoredSockets.plugs[socketLane] = grantedDefinition.definitionHash;
 
     CharacterState after = before;
     authored_inventory::Item* changed = character_item_at(after, location);
@@ -259,7 +332,8 @@ void report_socket_plug(std::string_view stage,
         || resolvedTarget->instance.ordinarySockets.state
                != middleware::datagen::family4::instance::OrdinarySocketBlockState::present
         || !resolvedTarget->instance.ordinarySockets.plugs[socketLane].has_value()
-        || *resolvedTarget->instance.ordinarySockets.plugs[socketLane] != plugDefinitionIndex) {
+        || *resolvedTarget->instance.ordinarySockets.plugs[socketLane]
+               != grantedDefinition.definitionIndex) {
         return fail("after_socket");
     }
 
@@ -271,18 +345,19 @@ void report_socket_plug(std::string_view stage,
     mutation.characterSoid = before.soid;
     mutation.targetInstanceSoid = targetInstanceSoid;
     mutation.targetDefinitionHash = targetDefinition.definitionHash;
-    mutation.plugDefinitionHash = plugDefinition.definitionHash;
+    mutation.plugDefinitionHash = grantedDefinition.definitionHash;
     mutation.materialRequirementSetHash = materialSet.requirementSetHash;
     mutation.characterIndex = characterIndex;
     mutation.expectedProfileItemCount = snapshot.profileItemCount;
     mutation.afterProfileItemCount = chargedAccount.profileItemCount;
     mutation.itemIndex = location.index;
     mutation.targetDefinitionIndex = targetDefinition.definitionIndex;
-    mutation.plugDefinitionIndex = plugDefinitionIndex;
+    mutation.plugDefinitionIndex = grantedDefinition.definitionIndex;
+    mutation.requestedPlugDefinitionIndex = plugDefinitionIndex;
     mutation.materialRequirementSetIndex = materialSetIndex;
     mutation.socketLane = socketLane;
     mutation.targetBucketId = targetDefinition.bucketId;
-    mutation.plugBucketId = plugDefinition.bucketId;
+    mutation.plugBucketId = grantedDefinition.bucketId;
     mutation.materialRequirementCount = materialSet.requirementCount;
     mutation.profileChanged = profileChanged;
     mutation.targetEquipped = location.equipped;
