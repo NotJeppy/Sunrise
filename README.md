@@ -6,7 +6,8 @@
 
 ## Current "New" Features
 > These are features that are not currently in the [main repo](https://github.com/stanuwu/Sunrise).
- - 
+ - [ReGlitch's enemy spawner](https://github.com/stanuwu/Sunrise/pull/46)
+ - [Nyxaraa's subclass equipping and full ability-node selection](https://github.com/stanuwu/Sunrise/pull/27)
 
 Destiny 2 Offline Exploration Mod
 
