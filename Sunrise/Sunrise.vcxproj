@@ -52,7 +52,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)vendor\detours;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_USRDLL;WIN32_LEAN_AND_MEAN;NOMINMAX;IMGUI_USER_CONFIG=&quot;core/ui/imgui_user_config.h&quot;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_USRDLL;WIN32_LEAN_AND_MEAN;NOMINMAX;IMGUI_USER_CONFIG="core/ui/imgui_user_config.h";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -130,12 +130,14 @@
     <ClCompile Include="src\client\hooks\cursor\cursor_hook_lifecycle.cpp" />
     <ClCompile Include="src\client\hooks\graphics\renderer\graphics_renderer_device.cpp" />
     <ClCompile Include="src\middleware\web_service\messages\opcode504_codec.cpp" />
+    <ClCompile Include="src\middleware\web_service\messages\opcode801_codec.cpp" />
     <ClCompile Include="src\middleware\web_service\messages\opcode903_codec.cpp" />
     <ClCompile Include="src\middleware\web_service\messages\opcode1901_codec.cpp" />
     <ClCompile Include="src\middleware\web_service\messages\opcode402_codec.cpp" />
     <ClCompile Include="src\middleware\web_service\messages\opcode403_codec.cpp" />
     <ClCompile Include="src\middleware\web_service\messages\opcode406_codec.cpp" />
     <ClCompile Include="src\middleware\web_service\messages\opcode1820_codec.cpp" />
+    <ClCompile Include="src\state\build_data\socket_entry_buckets\socket_entry_bucket_catalog.cpp" />
     <ClCompile Include="src\state\runtime\state_account_runtime.cpp" />
     <ClCompile Include="src\state\runtime\state_account_acquisition_runtime.cpp" />
     <ClCompile Include="src\state\runtime\state_account_dismantle_runtime.cpp" />
@@ -860,6 +862,7 @@
     <ClInclude Include="src\client\hooks\banner\banner_bind.h" />
     <ClInclude Include="src\client\hooks\banner\banner_hook_lifecycle.h" />
     <ClInclude Include="src\middleware\web_service\messages\opcode504.h" />
+    <ClInclude Include="src\middleware\web_service\messages\opcode801.h" />
     <ClInclude Include="src\middleware\web_service\messages\opcode903.h" />
     <ClInclude Include="src\middleware\web_service\messages\opcode1901.h" />
     <ClInclude Include="src\core\ui\busy\busy.h" />
@@ -995,6 +998,8 @@
     <ClInclude Include="src\client\targets\game\relative.h" />
     <ClInclude Include="src\client\targets\game\resolution\internal.h" />
     <ClInclude Include="src\client\targets\game\resolution\game_target_resolution.h" />
+    <ClInclude Include="src\state\build_data\socket_entry_buckets\definition.h" />
+    <ClInclude Include="src\state\build_data\socket_entry_buckets\socket_entry_bucket_catalog.h" />
     <ClInclude Include="src\steam\runtime\runtime.h" />
     <ClInclude Include="src\steam\runtime\callbacks\callback_registry.h" />
     <ClInclude Include="src\steam\runtime\internal.h" />

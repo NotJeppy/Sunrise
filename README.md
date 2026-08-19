@@ -1,5 +1,13 @@
 # Sunrise
 
+## Jeppy's Fork of Sunrise
+> This is my personal integration fork with unmerged PRs; it is unofficial and not reviewed or supported by the Sunrise maintainers. It might be ahead of sunrise ever so slightly because it has specific pull requests that have been either denied or are still open. Example: spawning enemies with a menu.
+> However, I will try to keep this updated with the main branch + maybe some extras
+
+## Current "New" Features
+> These are features that are not currently in the [main repo](https://github.com/stanuwu/Sunrise).
+ - 
+
 Destiny 2 Offline Exploration Mod
 
 > This mod installs onto an old build of the game and allows you to play it offline, loading into
