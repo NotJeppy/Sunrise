@@ -511,4 +511,104 @@ bool commit_item_state(PendingItemState& mutation) noexcept {
     return true;
 }
 
+/** Prepares one checked subclass socket-entry selection without publishing account State. */
+bool prepare_subclass_selection(std::uint64_t subclassInstanceSoid,
+                                std::uint8_t requestedEntry,
+                                PendingSubclassSelection& mutation) noexcept {
+    mutation = {};
+    const AccountState snapshot = account_snapshot();
+    std::size_t characterIndex = snapshot.characterCount;
+    if (account::valid(snapshot)) {
+        for (std::size_t index = 0; index < snapshot.characterCount; ++index) {
+            if (snapshot.characters[index].selected) {
+                characterIndex = index;
+                break;
+            }
+        }
+    }
+    if (characterIndex >= snapshot.characterCount
+        || !stage_subclass_selection(
+            snapshot, characterIndex, subclassInstanceSoid, requestedEntry, mutation)) {
+        mutation = {};
+        return false;
+    }
+    return true;
+}
+
+/** Produces the complete account after-image while the prepared subclass action remains current. */
+bool preview_subclass_selection(const PendingSubclassSelection& mutation,
+                                AccountState& after) noexcept {
+    after = {};
+    if (!mutation.prepared || mutation.accountSoid == 0 || mutation.characterSoid == 0
+        || mutation.subclassInstanceSoid == 0 || mutation.characterIndex >= kCharacterCapacity) {
+        return false;
+    }
+    const AccountState current = account_snapshot();
+    if (mutation.characterIndex >= current.characterCount
+        || current.primarySoid != mutation.accountSoid
+        || !same_character(current.characters[mutation.characterIndex], mutation.beforeCharacter)) {
+        return false;
+    }
+    PendingSubclassSelection canonical{};
+    if (!stage_subclass_selection(current,
+                                  mutation.characterIndex,
+                                  mutation.subclassInstanceSoid,
+                                  mutation.requestedEntry,
+                                  canonical)
+        || !same_character(canonical.afterCharacter, mutation.afterCharacter)) {
+        return false;
+    }
+    after = current;
+    after.characters[mutation.characterIndex] = canonical.afterCharacter;
+    family4_loadout::ResolvedLoadout resolved{};
+    return account::valid(after)
+           && family4_loadout::resolve(after, mutation.characterIndex, resolved);
+}
+
+/** Commits one prepared subclass selection behind exact account and character guards. */
+bool commit_subclass_selection(PendingSubclassSelection& mutation) noexcept {
+    const PendingSubclassSelection prepared = mutation;
+    mutation = {};
+    if (!prepared.prepared || prepared.accountSoid == 0 || prepared.characterSoid == 0
+        || prepared.subclassInstanceSoid == 0 || prepared.characterIndex >= kCharacterCapacity
+        || prepared.beforeCharacter.soid != prepared.characterSoid
+        || prepared.afterCharacter.soid != prepared.characterSoid) {
+        return false;
+    }
+
+    AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
+    AccountState candidate = runtime::storage::g_state.account;
+    if (prepared.characterIndex >= candidate.characterCount
+        || candidate.primarySoid != prepared.accountSoid
+        || !same_character(candidate.characters[prepared.characterIndex],
+                           prepared.beforeCharacter)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return false;
+    }
+    PendingSubclassSelection canonical{};
+    if (!stage_subclass_selection(candidate,
+                                  prepared.characterIndex,
+                                  prepared.subclassInstanceSoid,
+                                  prepared.requestedEntry,
+                                  canonical)
+        || !same_character(canonical.afterCharacter, prepared.afterCharacter)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return false;
+    }
+    candidate.characters[prepared.characterIndex] = canonical.afterCharacter;
+    family4_loadout::ResolvedLoadout checked{};
+    if (!account::valid(candidate)
+        || !family4_loadout::resolve(candidate, prepared.characterIndex, checked)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return false;
+    }
+    runtime::storage::g_state.account = candidate;
+    ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+
+    // The published ability buckets are keyed to whichever selection is currently active; that
+    // just changed, so the domain is stale the moment the account write above becomes visible.
+    build_data::invalidate_ability_buckets();
+    return true;
+}
+
 } // namespace sunrise::state

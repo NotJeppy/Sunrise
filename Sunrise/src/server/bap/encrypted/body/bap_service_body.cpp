@@ -201,6 +201,8 @@ bool process(const ServiceRoute& route,
         outcome.subscription = webOutcome.subscription;
         const auto* equipmentSwap =
             web_service::mutation_if<state::PendingEquipmentSwap>(webOutcome);
+        const auto* subclassSelection =
+            web_service::mutation_if<state::PendingSubclassSelection>(webOutcome);
         const auto* socketPlug = web_service::mutation_if<state::PendingSocketPlug>(webOutcome);
         const auto* itemState = web_service::mutation_if<state::PendingItemState>(webOutcome);
         const auto* itemAcquisition =
@@ -239,6 +241,38 @@ bool process(const ServiceRoute& route,
                 }
                 web_service::report_equip_response(message, status.value, output.first(written));
                 transaction.pending = *equipmentSwap;
+            }
+        }
+        if (subclassSelection != nullptr) {
+            // Opcode 801 completes at the exact Family-4 revision carrying the selected subclass
+            // socket entry. The resident manifest and equipped subclass identity stay unchanged.
+            auto& transaction = outcome.transaction.emplace<SubclassSelectionTransaction>();
+            if (!queuez::stage_subclass_selection(queuezState,
+                                                  subclassSelection->accountSoid,
+                                                  subclassSelection->characterSoid,
+                                                  subclassSelection->subclassInstanceSoid,
+                                                  transaction.update)) {
+                core::log::write(core::log::Channel::server,
+                                 core::log::Level::warn,
+                                 "ev=subclass_select stage=queuez_preflight result=fail");
+                outcome.transaction = std::monostate{};
+            } else {
+                middleware::web_service::StatusResponse status{};
+                status.value = transaction.update.after.family4Version;
+                if (!middleware::web_service::encode_response(
+                        message,
+                        middleware::web_service::ResponseShape::statusPair,
+                        status,
+                        output,
+                        written)) {
+                    core::log::write(core::log::Channel::server,
+                                     core::log::Level::warn,
+                                     "ev=subclass_select stage=response result=fail");
+                    return false;
+                }
+                web_service::report_subclass_selection_response(
+                    message, status.value, *subclassSelection, output.first(written));
+                transaction.pending = *subclassSelection;
             }
         }
         if (socketPlug != nullptr) {

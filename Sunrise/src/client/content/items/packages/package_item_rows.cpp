@@ -166,10 +166,15 @@ bool build_item_rows(const reader::Source& source,
         }
     }
     // Ability buckets read the socket entry list table again and depend on the detail domain, so
-    // they run last.
-    if (published && !state::build_data::ability_buckets_ready()) {
+    // they run last. The entry-bucket table is resolved in the same pass but never joins the
+    // on-disk cache, so a warm boot that finds the ability buckets already cached still has to
+    // run this once to fill it in for the session.
+    if (published
+        && (!state::build_data::ability_buckets_ready()
+            || !state::build_data::socket_entry_buckets_ready())) {
         reason = "abilities";
         std::size_t abilityCount = 0;
+        std::size_t entryBucketCount = 0;
         const bool built = build_character_abilities(source,
                                                      storage.scratch,
                                                      std::span<const std::byte>{storage.root},
@@ -177,10 +182,14 @@ bool build_item_rows(const reader::Source& source,
                                                      storage.definition,
                                                      storage.abilityPool,
                                                      storage.abilityRows,
-                                                     abilityCount);
+                                                     abilityCount,
+                                                     storage.entryBucketRows,
+                                                     entryBucketCount);
         published = built
                     && state::build_data::publish_ability_buckets(
-                        std::span(storage.abilityRows).first(abilityCount));
+                        std::span(storage.abilityRows).first(abilityCount))
+                    && state::build_data::publish_socket_entry_buckets(
+                        std::span(storage.entryBucketRows).first(entryBucketCount));
         if (built) {
             report_ability_count(abilityCount);
         }

@@ -79,6 +79,9 @@ struct Storage {
     std::array<state::build_data::abilities::Definition,
                state::build_data::abilities::kDefinitionCapacity>
         abilityRows{};
+    std::array<state::build_data::socket_entry_buckets::Definition,
+               state::build_data::socket_entry_buckets::kDefinitionCapacity>
+        entryBucketRows{};
     std::array<state::build_data::progressions::Definition,
                state::build_data::progressions::kDefinitionCapacity>
         progressionRows{};
@@ -217,7 +220,27 @@ build_character_abilities(const reader::Source& source,
                           std::vector<std::byte>& definition,
                           std::vector<std::byte>& blob,
                           std::span<state::build_data::abilities::Definition> output,
-                          std::size_t& count) noexcept;
+                          std::size_t& count,
+                          std::span<state::build_data::socket_entry_buckets::Definition>
+                              entryBucketOutput,
+                          std::size_t& entryBucketCount) noexcept;
+
+/**
+ * Resolves which of the 12 semantic ability buckets every entry in one socket-entry list reaches.
+ * @param source Package source.
+ * @param scratch Reader scratch.
+ * @param listDefinition One socket-entry list's definition bytes.
+ * @param blob Scratch storage reused for every pool blob.
+ * @param output Receives one resolved bucket per entry, or the no-destination sentinel.
+ * @return True when the list's entries read.
+ */
+[[nodiscard]] bool resolve_entry_buckets(
+    const reader::Source& source,
+    reader::Scratch& scratch,
+    std::span<const std::byte> listDefinition,
+    std::vector<std::byte>& blob,
+    std::array<std::uint8_t, state::build_data::socket_entry_lists::kEntryCapacity>&
+        output) noexcept;
 
 /**
  * Reads the progression definition table and the object array each definition routes to.

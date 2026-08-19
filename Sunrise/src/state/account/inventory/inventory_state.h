@@ -88,6 +88,18 @@ struct Item {
     /** Native accumulated item-state bits such as the finisher favorite marker. */
     std::uint32_t flags{};
     Sockets sockets;
+    /**
+     * Selected ability-node socket entries. Only meaningful when this item is a subclass; every
+     * other item carries these unused. Kept on the item rather than the character so each owned
+     * subclass remembers its own picks independently instead of sharing one set across all of
+     * them. Defaults match state::kDefault*AbilityEntry (the first option of each group, where
+     * every shipped subclass starts) but are literal here to avoid a circular include.
+     */
+    std::uint8_t movementAbilityEntry{4};
+    std::uint8_t grenadeAbilityEntry{7};
+    std::uint8_t superAbilityEntry{10};
+    std::uint8_t meleeAbilityEntry{11};
+    std::uint8_t classAbilityEntry{2};
 };
 
 /** Ordered unequipped items placed into their native character-inventory bucket ranges. */
