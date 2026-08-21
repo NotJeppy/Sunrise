@@ -11,8 +11,6 @@
 
 namespace sunrise::core::settings::parser {
 
-struct ParserTestAccess;
-
 /** Fixed-storage JSON reader for the supported Core settings. */
 class Parser {
 public:
@@ -32,8 +30,6 @@ public:
      * @return True when the object is valid JSON.
      */
 private:
-    friend struct ParserTestAccess;
-
     [[nodiscard]] bool core(Settings& output) noexcept;
     /**
      * Parses Client settings on top of the fixed defaults.

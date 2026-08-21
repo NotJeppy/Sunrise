@@ -61,8 +61,7 @@ void collect_rows(const Equipped& equipped,
     const std::size_t lanes = equipped.laneCount + 1;
     for (std::size_t source = 0; source < lanes; ++source) {
         const std::uint16_t definitionIndex =
-            source == 0 ? equipped.definitionIndex
-                        : resolve_effective_plug(equipped, source - 1);
+            source == 0 ? equipped.definitionIndex : resolve_effective_plug(equipped, source - 1);
         details::Definition detail{};
         if (definitionIndex == details::kUnavailableItemIndex
             || !state::build_data::find_configured_item_detail(definitionIndex, detail)) {

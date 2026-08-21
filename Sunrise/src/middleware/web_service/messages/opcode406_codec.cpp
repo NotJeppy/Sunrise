@@ -1,8 +1,8 @@
 #include <cstddef>
 #include <limits>
 
-#include "../../encoding/bit_reader.h"
 #include "../../../state/account/inventory/item_state.h"
+#include "../../encoding/bit_reader.h"
 #include "opcode406.h"
 
 namespace sunrise::middleware::web_service::messages::opcode406 {

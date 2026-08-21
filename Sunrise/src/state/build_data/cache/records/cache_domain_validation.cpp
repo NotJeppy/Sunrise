@@ -75,7 +75,11 @@ namespace {
            || (left.itemDefinitionIndex == right.itemDefinitionIndex && left.lane < right.lane);
 }
 
-/** @return Native item-index order for catalyst rows. */
+/**
+ * @param left First catalyst row.
+ * @param right Second catalyst row.
+ * @return True when the first native item index is less than the second.
+ */
 [[nodiscard]] bool catalyst_less(const items::catalysts::Definition& left,
                                  const items::catalysts::Definition& right) noexcept {
     return left.itemDefinitionIndex < right.itemDefinitionIndex;
@@ -210,8 +214,8 @@ bool valid_domains(Domains domains) noexcept {
     if (domains.constants.extracted != 1U || domains.named.empty() || domains.items.empty()
         || domains.collectibles.empty() || domains.materialRequirementSets.empty()
         || domains.socketPlugRules.empty() || domains.socketPlugPools.empty()
-        || domains.exoticCatalysts.empty()
-        || domains.inventoryBuckets.empty() || domains.socketEntryLists.empty()
+        || domains.exoticCatalysts.empty() || domains.inventoryBuckets.empty()
+        || domains.socketEntryLists.empty()
         || !std::all_of(domains.named.begin(), domains.named.end(), valid_name)
         || !strictly_ordered(domains.named, named_less) || !items::valid(domains.items)
         || !collectibles::valid(domains.collectibles)
@@ -275,14 +279,9 @@ bool valid_domains(Domains domains) noexcept {
            && valid_socket_plug_links(domains.socketPlugRules,
                                       domains.socketPlugPools,
                                       domains.socketPlugMembers,
-                                       domains.items,
-                                       domains.itemDetails)
-           && valid_exotic_catalyst_links(domains.exoticCatalysts,
-                                           domains.items,
-                                           domains.itemDetails,
-                                           domains.socketPlugRules,
-                                           domains.socketPlugPools,
-                                           domains.socketPlugMembers);
+                                      domains.items,
+                                      domains.itemDetails)
+           && valid_exotic_catalyst_links(domains);
 }
 
 } // namespace sunrise::state::build_data::cache::records
