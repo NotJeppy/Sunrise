@@ -51,7 +51,6 @@ bool parse_request(const Message& message, Request& request) noexcept {
     if (!read || instancePresent == 0 || instanceSoid == 0 || definitionPresent == 0
         || definitionIndex > (std::numeric_limits<std::uint16_t>::max)()
         || encodedFlags < kValueBias || padding != 0
-        || encodedFlags - kValueBias > (std::numeric_limits<std::uint32_t>::max)()
         || !state::account::inventory::valid_item_state(
             static_cast<std::uint32_t>(encodedFlags - kValueBias))) {
         return false;
