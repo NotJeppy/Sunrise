@@ -6,8 +6,9 @@
 
 ## Current "New" Features
 > These are features that are not currently in the [main repo](https://github.com/stanuwu/Sunrise).
- - [ReGlitch's Spawn Enemies Pull Request](https://github.com/stanuwu/Sunrise/pull/46)
- - [ocucor's persistent user sessions](https://github.com/stanuwu/Sunrise/pull/68)
+ - [ReGlitch's Spawn Enemies Pull Request](https://github.com/stanuwu/Sunrise/pull/46) (Spawns enemies)
+ - [ocucor's persistent user sessions](https://github.com/stanuwu/Sunrise/pull/68) (Saves Item Selections)
+ - [ocucor's basic roster functionality](https://github.com/stanuwu/Sunrise/pull/80) (Fixes blank roster in orbit and in menu)
 
 Destiny 2 Offline Exploration Mod
 
