@@ -451,7 +451,6 @@ bool process(const ServiceRoute& route,
         }
         // A pick that names the resident character moves nothing, so staging refuses it and the
         // reply still stands on its own.
-        outcome.requiresSelfResync = webOutcome.requiresSelfResync;
         if (webOutcome.hasSelectedCharacter
             && queuez::stage_select_character(
                 queuezState, webOutcome.selectedCharacterSoid, outcome.selectCharacter)) {

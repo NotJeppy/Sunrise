@@ -29,7 +29,6 @@
 #include "../../state/build_data/runtime.h"
 #include "../../state/build_data/vendors/vendor_catalog.h"
 #include "../../state/runtime/runtime.h"
-#include "../../state/unlocks/unlocks_runtime.h"
 
 namespace sunrise::server::web_service {
 
@@ -819,10 +818,9 @@ void report_purchase(std::uint16_t opcode,
 /**
  * Rolls one random unheld repeatable bounty, for a row that offers "additional bounties".
  *
- * That row sells a Dummy placeholder like a reputation turn-in does - granting it is what put an
- * "Additional Bounties" item in the inventory, and because the placeholder sits in the Quests
- * bucket the client then treated the row as owned and stopped offering it. The row is meant to
- * hand out a real bounty, repeatably.
+ * That row sells a Dummy placeholder - granting it is what put an "Additional Bounties" item in
+ * the inventory, and because the placeholder sits in the Quests bucket the client then treated the
+ * row as owned and stopped offering it. The row is meant to hand out a real bounty, repeatably.
  *
  * What it owes is a REPEATABLE bounty, which is a distinct kind: the row costs 3000 glimmer where
  * the same vendor's daily costs 250, and a character may hold five of them at once.
@@ -938,7 +936,7 @@ void report_purchase(std::uint16_t opcode,
 /**
  * Runs a vendor's recycle row: charges the stack it names and credits what it pays out.
  *
- * A recycle row sells a Dummy placeholder like a reputation turn-in does, and the exchange is the
+ * A recycle row sells a Dummy placeholder, and the exchange is the
  * whole point of clicking it. The Drifter's four Synth Recycling rows take five synths each; Master
  * Rahool's Recycle Shaders category has one row per shader, 277 of them, each taking five of that
  * shader.
@@ -1031,131 +1029,6 @@ exchange_vendor_row(std::int32_t vendorIndex,
     // Even a refused exchange owns the row. Falling through would grant the Dummy placeholder,
     // which is the failure this whole path exists to avoid.
     return true;
-}
-
-/** Resolves one vendor sale row to the item it sells and the category it belongs to. */
-[[nodiscard]] bool resolve_vendor_row(std::int32_t vendorIndex,
-                                      std::int32_t rowIndex,
-                                      std::uint16_t& itemDefinitionIndex,
-                                      std::int32_t& categoryIndex,
-                                      const char*& reason) noexcept;
-
-/**
- * Records a reputation rule that named something this build cannot credit.
- *
- * @param reason What the rule got wrong.
- * @param vendorIndex Vendor the rule names.
- * @param categoryIndex Category the rule names.
- * @param definition Progression definition the rule names.
- * @param amount Amount the rule would have credited.
- */
-void report_reputation_refusal(const char* reason,
-                               std::int32_t vendorIndex,
-                               std::int32_t categoryIndex,
-                               std::uint16_t definition,
-                               std::int32_t amount) noexcept {
-    std::array<char, core::log::kLineCapacity> line{};
-    const int used = std::snprintf(line.data(),
-                                   line.size(),
-                                   "ev=reputation stage=credit result=fail reason=%s vendor=%d "
-                                   "category=%d definition=%u amount=%d",
-                                   reason,
-                                   vendorIndex,
-                                   categoryIndex,
-                                   static_cast<unsigned>(definition),
-                                   amount);
-    if (used > 0) {
-        core::log::write(core::log::Channel::server,
-                         core::log::Level::warn,
-                         {line.data(), static_cast<std::size_t>(used)});
-    }
-}
-
-/**
- * Credits vendor reputation for a currency turn-in, in place of granting the row's item.
- *
- * A reputation turn-in is a sale row whose item is a Dummy placeholder: the purchase is meant to
- * run a side effect while the dummy is only what the window draws. Granting it is what put
- * "Gunsmith Rewards" in the player's inventory. The row is recognised by its vendor and category,
- * because a category is what an interaction points at - Banshee's "Increase Reputation" is
- * interaction 37 with vendorCategoryIndex 7, so its turn-ins are the rows whose +100 reads 7.
- *
- * Configured by `vendor_reputation.txt`, one rule per line:
- *   `<vendorIndex> <categoryIndex> <progressionDefinition> <amount> <stepTotal>`
- * All five fields are required. A short line reads its missing fields as zero rather than reaching
- * into the next line, because a field never crosses a line ending, so one malformed rule stays one
- * malformed rule. `stepTotal` is the definition's step size and is reported only, because the
- * client derives the rank itself by walking the steps against the cumulative lane.
- *
- * This is data-driven because the vendor-to-progression mapping is not derivable yet: Sunrise
- * extracts neither the vendor's factionHash nor progression definition hashes, so the one known
- * pair (Banshee 22 -> definition 55) was established empirically by bisection.
- *
- * @param vendorIndex Vendor the purchase names.
- * @param categoryIndex Category of the purchased row, from sale row +100.
- * @return True when this row was a reputation turn-in and its item must NOT be granted.
- */
-[[nodiscard]] bool credit_vendor_reputation(std::int32_t vendorIndex,
-                                            std::int32_t categoryIndex) noexcept {
-    if (vendorIndex < 0 || categoryIndex < 0) {
-        return false;
-    }
-    static std::array<char, core::rule_text::kRuleTextCapacity> text{};
-    if (!core::path::read_artifact_text(L"vendor_reputation.txt", text)) {
-        return false;
-    }
-    core::rule_text::Cursor rules{text.data()};
-    while (rules.seek_field()) {
-        std::array<std::int32_t, 5> field{};
-        for (std::int32_t& value : field) {
-            value = rules.read_decimal();
-        }
-        if (field[0] != vendorIndex || field[1] != categoryIndex) {
-            continue;
-        }
-        const auto definition = static_cast<std::uint16_t>(field[2]);
-        const std::int32_t amount = field[3];
-        const std::int32_t stepTotal = field[4];
-        // The definition names a row of a fixed bank, and it comes from an authored file, so it is
-        // checked before it is used to read one. A mistyped rule would otherwise read past the
-        // bank and report whatever it found as the player's new standing.
-        if (definition >= state::build_data::progressions::kDefinitionCapacity) {
-            report_reputation_refusal("definition", vendorIndex, categoryIndex, definition, amount);
-            return false;
-        }
-        // A rank does not roll over on its own. It fills to the boundary and stops there, the
-        // vendor offers its faction reward, and only claiming that reward releases whatever was
-        // earned past the boundary into the next rank. So lane 0 is clamped to the boundary and
-        // the excess is parked in lane 2, which the client publishes but does not read.
-        const state::unlocks::ProgressionLanes lanes =
-            state::unlocks::get().characterProgressions[definition];
-        const std::int32_t before = lanes[0];
-        // Lane 0 is cumulative: the client walks the progression definition's step totals
-        // against it to derive the rank, so it is never reset and never clamped. Lanes 1 and 2
-        // produce no visible effect and are left alone.
-        state::unlocks::ProgressionLanes next = lanes;
-        next[0] = before + amount;
-        if (!state::unlocks::set_progression(state::build_data::progressions::Scope::character,
-                                             definition, next)) {
-            // Saying the credit landed when the write refused it would send the player looking for
-            // reputation that was never stored.
-            report_reputation_refusal("write", vendorIndex, categoryIndex, definition, amount);
-            return false;
-        }
-        std::array<char, core::log::kLineCapacity> line{};
-        const int used = std::snprintf(
-            line.data(), line.size(),
-            "ev=reputation stage=credit vendor=%d category=%d definition=%u amount=%d shown=%d "
-            "step=%d",
-            vendorIndex, categoryIndex, static_cast<unsigned>(definition), amount, next[0],
-            stepTotal);
-        if (used > 0) {
-            core::log::write(core::log::Channel::server, core::log::Level::info,
-                             {line.data(), static_cast<std::size_t>(used)});
-        }
-        return true;
-    }
-    return false;
 }
 
 /**
@@ -1554,8 +1427,6 @@ constexpr std::uint32_t kAbsentNameHash = 0x811C9DC5U;
 enum class RowOutcome : std::uint8_t {
     /** The row rolled a bounty from an authored pool. */
     bountyRoll,
-    /** The row was a reputation turn-in. */
-    reputation,
     /** The row charged one stack and credited others. */
     exchange,
     /** The row granted the item it names, or the item it stands for. */
@@ -1565,8 +1436,8 @@ enum class RowOutcome : std::uint8_t {
 /**
  * Settles one resolved vendor row, in the order a row's behaviours are tried.
  *
- * Both vendor opcodes end here. A row is one of four things, and which it is cannot be read off the
- * row itself - each is recognised by an authored rule keyed to the vendor, so they are tried in
+ * Both vendor opcodes end here. A row is one of three things, and which it is cannot be read off
+ * the row itself - each is recognised by an authored rule keyed to the vendor, so they are tried in
  * turn and the first that claims the row owns it. Keeping that order in one place is what stops the
  * two opcodes drifting: a behaviour taught to one and not the other is the shape of bug this path
  * has already produced more than once.
@@ -1602,14 +1473,6 @@ RowOutcome settle_vendor_row(const middleware::web_service::Message& message,
             grant_item_definition(message, rolledCollectible, rolledBounty, outcome);
         }
         return RowOutcome::bountyRoll;
-    }
-    if (credit_vendor_reputation(vendorIndex, categoryIndex)) {
-        report_purchase(opcode, "ok", "reputation", vendorIndex, rowIndex, itemDefinitionIndex);
-        // Granting nothing means preparing no transaction, so nothing would re-encode the
-        // character and the credit would sit in server state unseen. This asks for the peer's own
-        // account graph to be resent.
-        outcome.requiresSelfResync = true;
-        return RowOutcome::reputation;
     }
     state::PendingProfileItemAcquisition exchange{};
     if (exchange_vendor_row(vendorIndex, rowIndex, exchange)) {
@@ -1685,8 +1548,6 @@ void acquire_quest(const middleware::web_service::Message& message, Outcome& out
         }
         return;
     }
-    // The reputation turn-in arrives on opcode 904, not 901: it is the quest-acquire path that
-    // carries it, along with every other behaviour a row can hold.
     const RowOutcome settled = settle_vendor_row(message,
                                                  quest::kOpcode,
                                                  request.vendorIndex,
@@ -1694,9 +1555,8 @@ void acquire_quest(const middleware::web_service::Message& message, Outcome& out
                                                  questCategoryIndex,
                                                  itemDefinitionIndex,
                                                  outcome);
-    // Only a row that handed over the quest it offered answers the banner. A bounty roll, a
-    // reputation credit and an exchange all leave the banner's own question unanswered, so it
-    // stays up.
+    // Only a row that handed over the quest it offered answers the banner. A bounty roll and an
+    // exchange leave the banner's own question unanswered, so it stays up.
     if (settled != RowOutcome::granted) {
         return;
     }
@@ -1744,10 +1604,6 @@ void purchase_item(const middleware::web_service::Message& message, Outcome& out
     }
     // Bounties, quest steps and tokens carry no collectible. The acquisition takes the sentinel
     // rather than a made-up row, and both prepare and commit skip the collectible steps for it.
-    // A reputation turn-in sells a Dummy placeholder; the purchase is meant to credit the vendor
-    // progression, not put that placeholder in the inventory. Crossing a step total is what hands
-    // out the rank-up reward, because offline the client renders the bar and grants nothing.
-    //
     (void)settle_vendor_row(message,
                             purchase::kOpcode,
                             request.vendorIndex,
