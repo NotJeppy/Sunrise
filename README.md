@@ -9,7 +9,7 @@
  - [ReGlitch's Spawn Enemies Pull Request](https://github.com/stanuwu/Sunrise/pull/46) (Spawns enemies)
  - [ocucor's persistent user sessions](https://github.com/stanuwu/Sunrise/pull/68) (Saves Item Selections)
  - [ocucor's basic roster functionality](https://github.com/stanuwu/Sunrise/pull/80) (Fixes blank roster in orbit and in menu)
- - [chnsw's Tower vendors, purchases, and quests + more](https://github.com/stanuwu/Sunrise/pull/87) (Adds tower vendors, purchases, quests, bounties, reputation and recycling)
+ - [chnsw's Tower vendors, purchases, and quests + more](https://github.com/stanuwu/Sunrise/pull/87) (Adds tower vendors, purchases, quests, bounties, reputation and recycling) (requires manually spawning vendors in tower, but quests are claimable and certain things can be grabbed from vendors)
  - [yazan-albaiz's Catalyst Investment State Fix](https://github.com/stanuwu/Sunrise/pull/85) (Catalyst Fix)
 
 Destiny 2 Offline Exploration Mod
