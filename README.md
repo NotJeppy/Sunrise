@@ -1,5 +1,17 @@
 # Sunrise
 
+## Jeppy's Fork of Sunrise
+> This is my personal integration fork with unmerged PRs; it is unofficial and not reviewed or supported by the Sunrise maintainers. It might be ahead of sunrise ever so slightly because it has specific pull requests that have been either denied or are still open. Example: spawning enemies with a menu.
+> However, I will try to keep this updated with the main branch + maybe some extras
+
+## Current "New" Features
+> These are features that are not currently in the [main repo](https://github.com/stanuwu/Sunrise).
+ - [ReGlitch's Spawn Enemies Pull Request](https://github.com/stanuwu/Sunrise/pull/46) (Spawns enemies)
+ - [ocucor's persistent user sessions](https://github.com/stanuwu/Sunrise/pull/68) (Saves Item Selections)
+ - [ocucor's basic roster functionality](https://github.com/stanuwu/Sunrise/pull/80) (Fixes blank roster in orbit and in menu)
+ - [chnsw's Tower vendors, purchases, and quests + more](https://github.com/stanuwu/Sunrise/pull/87) (Adds tower vendors, purchases, quests, bounties, reputation and recycling)
+ - [yazan-albaiz's Catalyst Investment State Fix](https://github.com/stanuwu/Sunrise/pull/85) (Catalyst Fix)
+
 Destiny 2 Offline Exploration Mod
 
 > This mod installs onto an old build of the game and allows you to play it offline, loading into
@@ -38,50 +50,6 @@ Issues are for bug reports only.
 PRs are for pull requests only.
 
 Do not go and argue/chat there, you can do that on the discord.
-
-## Building
-
-### Windows
-
-Install Visual Studio 2026 with the **Desktop development with C++** workload. The project builds
-against the v145 toolset and the 10.0.26100 Windows SDK, so check that both are selected in the
-installer.
-
-The easiest route is to open `Sunrise.sln`, select the `Release` `x64` configuration and build.
-
-To build from a command line, use the Developer PowerShell for VS 2026:
-
-1. Clone the repository
-```powershell
-git clone https://github.com/stanuwu/Sunrise
-cd Sunrise
-```
-
-2. Build the solution
-```powershell
-msbuild Sunrise.sln /m /p:Configuration=Release /p:Platform=x64
-```
-
-### Linux
-
-Make sure you have `git`, `cmake`, `clang`, `ninja`, `llvm`, and `xwin` installed.
-
-1. Clone the repository
-```bash
-$ git clone https://github.com/stanuwu/Sunrise
-$ cd Sunrise
-```
-
-2. Download Windows headers:
-```bash
-$ xwin --accept-license splat --include-debug-libs --sdk-version 10.0.26100 --output .xwin-cache
-```
-
-3. Configure and build the project
-```bash
-$ cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=$(pwd)/linux-to-win-toolchain.cmake -DCMAKE_BUILD_TYPE=Release
-$ cmake --build build --config Release
-```
 
 ## Contributing
 
